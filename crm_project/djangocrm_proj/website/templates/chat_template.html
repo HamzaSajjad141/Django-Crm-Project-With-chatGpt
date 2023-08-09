@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Chatbot</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            
+            background-color: #f4f4f4;
+        }
+
+        #chat-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        #chat-history {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            max-height: 300px;
+            overflow-y: scroll;
+        }
+
+        #chat-form {
+            display: flex;
+        }
+
+        #user-message {
+            flex-grow: 1;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        #user-message:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        #user-message::placeholder {
+            color: #aaa;
+        }
+
+        #user-message + button {
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #user-message + button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Chat with our Chatbot</h1>
+        <div id="chat-history">
+            <!-- Chat history will be displayed here -->
+        </div>
+        <form id="chat-form">
+            <!-- {% csrf_token %} -->
+            <input type="text" id="user-message" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <script>
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        const chatHistoryElem = document.getElementById('chat-history');
+        const chatFormElem = document.getElementById('chat-form');
+        const userMessageElem = document.getElementById('user-message');
+
+        chatFormElem.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            // Get the user message from the input field
+            const userMessage = userMessageElem.value;
+
+            // Display the user message in the chat history
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.innerText = `You: ${userMessage}`;
+            chatHistoryElem.appendChild(userMessageDiv);
+
+            // Clear the input field
+            userMessageElem.value = '';
+
+            // Get the CSRF token from the cookie
+            const csrfToken = getCookie('csrftoken');
+
+            // Send the user message to the server
+            fetch('/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: `user_message=${encodeURIComponent(userMessage)}`,
+            })
+            .then(response => {
+                // Check if the response status is OK (200)
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // Parse response as JSON
+                return response.json();
+            })
+            .then(data => {
+                // Display the bot's reply in the chat history
+                const botReplyDiv = document.createElement('div');
+                botReplyDiv.innerText = `Chatbot: ${data.bot_reply}`;
+                chatHistoryElem.appendChild(botReplyDiv);
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
